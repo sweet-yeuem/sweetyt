@@ -1,5 +1,5 @@
 -- Kiểm tra xem game có phải là game với PlaceId = 2753915549 không
-if game.PlaceId == 2753915549 then
+if game.PlaceId == 2753915549 then PlaceId == 1537690962 or game.PlaceId == 4079902982 then
     -- Initialize HttpService to get UniverseID
     local UniverseID = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://apis.roblox.com/universes/v1/places/"..game.PlaceId.."/universe")).universeId
 
