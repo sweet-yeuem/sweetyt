@@ -1,197 +1,69 @@
-highChestOnly = true
-godsChalicSniper = false
+-- Initialize HttpService to get UniverseID
+local UniverseID = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://apis.roblox.com/universes/v1/places/"..game.PlaceId.."/universe")).universeId
 
-repeat task.wait(4) until game:IsLoaded()
+-- Create a GUI to show script names
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer.PlayerGui
 
-local PlaceID = game.PlaceId
-local AllIDs = {}
-local foundAnything = ""
-local actualHour = os.date("!*t").hour
-local Deleted = false
-local discordInviteLink = "https://discord.gg/stae"  -- Thay đổi theo liên kết mời của bạn
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0.5
+frame.Parent = screenGui
 
--- Đọc và ghi dữ liệu
-local File = pcall(function()
-    AllIDs = game:GetService('HttpService'):JSONDecode(readfile("NotSameServers.json"))
-end)
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Select Script to Run"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSans
+titleLabel.TextSize = 20
+titleLabel.Parent = frame
 
-if not File then
-    table.insert(AllIDs, actualHour)
-    writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+local buttonSize = UDim2.new(1, 0, 0, 30)
+local buttonSpacing = UDim2.new(0, 0, 0, 5)
+local buttons = {}
+
+-- Function to create a button for each script
+local function createButton(scriptName, loadUrl)
+    local button = Instance.new("TextButton")
+    button.Size = buttonSize
+    button.Text = scriptName
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 18
+    button.Parent = frame
+    table.insert(buttons, button)
+
+    button.MouseButton1Click:Connect(function()
+        -- When the button is clicked, execute the corresponding script
+        loadstring(game:HttpGet(loadUrl))()
+    end)
 end
 
--- Hàm teleport
-function TPReturner()
-    local Site
-    if foundAnything == "" then
-        Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
-    else
-        Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
-    end
-
-    local ID = ""
-    if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
-        foundAnything = Site.nextPageCursor
-    end
-
-    local num = 0
-    for i,v in pairs(Site.data) do
-        local Possible = true
-        ID = tostring(v.id)
-        if tonumber(v.maxPlayers) > tonumber(v.playing) then
-            for _,Existing in pairs(AllIDs) do
-                if num ~= 0 then
-                    if ID == tostring(Existing) then
-                        Possible = false
-                    end
-                else
-                    if tonumber(actualHour) ~= tonumber(Existing) then
-                        local delFile = pcall(function()
-                            delfile("NotSameServers.json")
-                            AllIDs = {}
-                            table.insert(AllIDs, actualHour)
-                        end)
-                    end
-                end
-                num = num + 1
-            end
-
-            if Possible == true then
-                table.insert(AllIDs, ID)
-                wait()
-                pcall(function()
-                    writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
-                    wait()
-                    game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
-                end)
-                wait(4)
-            end
-        end
-    end
+-- Create buttons for each script based on the game PlaceId
+if game.PlaceId == 1537690962 or game.PlaceId == 4079902982 then
+    createButton("BSS Rewrite", "https://raw.githubusercontent.com/hlamx/huhu/master/bssrewrite-obfuscated.lua")
+    createButton("BSS BananaCat", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BSS-BananaCat.lua")
+elseif game.PlaceId == 10260193230 then
+    createButton("Seahuhu BananaCat", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/Seahuhu-BananaCat.lua")
+elseif game.PlaceId == 7449423635 or game.PlaceId == 2753915549 or game.PlaceId == 4442272183 then
+    createButton("BF BananaCat", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BF-BananaCat.lua")
+elseif game.PlaceId == 4520749081 or game.PlaceId == 6381829480 or game.PlaceId == 15759515082 or game.PlaceId == 5931540094 then
+    createButton("KL BananaCat", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/KL-BananaCat.lua")
+elseif game.PlaceId == 18901165922 or game.PlaceId == 19006211286 then
+    createButton("PetsGo", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/refs/heads/main/PetsGo.lua")
+elseif game.PlaceId == 16732694052 then
+    createButton("Fisch", "https://raw.githubusercontent.com/AhmadV99/Banana-Cat-Hub/main/Fisch.lua")
+elseif UniverseID == 5844593548 then
+    createButton("Anime Reborn", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/AnimeReborn.lua")
+else
+    createButton("AV BananaCat", "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/AV-BananaCat.lua")
 end
 
--- Hàm teleport liên tục
-function Teleport()
-    while wait() do
-        pcall(function()
-            TPReturner()
-            if foundAnything ~= "" then
-                TPReturner()
-            end
-        end)
-    end
+-- Arrange buttons vertically with some spacing
+for i, button in ipairs(buttons) do
+    button.Position = UDim2.new(0, 0, 0.1 + (i - 1) * (button.Size.Y.Scale + buttonSpacing.Y.Scale), 0)
 end
-
--- Kiểm tra lỗi và retry teleport
-local veryImportantWaitTime = 0.5
-task.spawn(function()
-    while task.wait(veryImportantWaitTime) do
-        pcall(function()
-            for i,v in pairs(game.CoreGui:GetDescendants()) do
-                pcall(function()
-                    if string.find(v.Name,"ErrorMessage") then
-                        if string.find(v.Text,"Security kick") then
-                            veryImportantWaitTime = 1e9
-                            Teleport()
-                        end
-                    end
-                end)
-            end
-        end)
-    end
-end)
-
--- Cài đặt điều khiển UI
-local AllowRunService = true
-local AllowRunServiceBind = Instance.new("BindableFunction")
-
-function AllowRunServiceBind.OnInvoke(args)
-    if args == "ON" then
-        AllowRunService = true
-    elseif args == "OFF" then
-        AllowRunService = false
-    end
-
-    local CoreGui = game:GetService("StarterGui")
-    CoreGui:SetCore("SendNotification", {
-        Title = "Chest Farm",
-        Text = "By Sweet YT " .. discordInviteLink,
-        Icon = "rbxthumb://type=Asset&id=18856351865&w=150&h=150",
-        Duration = math.huge,
-        Callback = AllowRunServiceBind,
-        Button1 = "ON",
-        Button2 = "OFF",
-    })
-end
-
--- Thông báo ban đầu
-local CoreGui = game:GetService("StarterGui")
-CoreGui:SetCore("SendNotification", {
-    Title = "ChestFarm",
-    Text = "By Sweet YT " .. discordInviteLink,
-    Icon = "rbxthumb://type=Asset&id=18856351865&w=150&h=150",
-    Duration = math.huge,
-    Callback = AllowRunServiceBind,
-    Button1 = "ON",
-    Button2 = "OFF",
-})
-
--- Chạy vòng lặp kiểm tra
-task.spawn(function()
-    while true and task.wait(.5) do
-        if AllowRunService == true then
-            local ohString1 = "SetTeam"
-            local ohString2 = "Marines"
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(ohString1, ohString2)
-        end
-    end
-end)
-
--- Xử lý chest
-task.spawn(function()
-    while true and task.wait() do
-        if AllowRunService == true then
-            if highChestOnly == false then
-                local hasChar = game.Players.LocalPlayer:FindFirstChild("Character")
-                if not game.Players.LocalPlayer.Character then
-                    -- (Mã mã hóa)
-                else
-                    local hasCrewTag = game.Players.LocalPlayer.Character:FindFirstChild("CrewBBG",true)
-                    if hasCrewTag then hasCrewTag:Destroy() end
-
-                    local hasHumanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                    if hasHumanoid then
-                        local Chest = game.Workspace:FindFirstChild("Chest4") or game.Workspace:FindFirstChild("Chest3") or game.Workspace:FindFirstChild("Chest2") or game.Workspace:FindFirstChild("Chest1") or game.Workspace:FindFirstChild("Chest")
-                        if Chest then
-                            game.Players.LocalPlayer.Character:PivotTo(Chest:GetPivot())
-                            firesignal(Chest.Touched,game.Players.LocalPlayer.Character.HumanoidRootPart)
-                        else
-                            Teleport()
-                            break
-                        end
-                    end
-                end
-            elseif highChestOnly == true then
-                local hasChar = game.Players.LocalPlayer:FindFirstChild("Character")
-                if not game.Players.LocalPlayer.Character then
-                    -- (Mã mã hóa)
-                else
-                    local hasCrewTag = game.Players.LocalPlayer.Character:FindFirstChild("CrewBBG",true)
-                    if hasCrewTag then hasCrewTag:Destroy() end
-
-                    local hasHumanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                    if hasHumanoid then
-                        local Chest = game.Workspace:FindFirstChild("Chest4") or game.Workspace:FindFirstChild("Chest3") or game.Workspace:FindFirstChild("Chest2")
-                        if Chest then
-                            game.Players.LocalPlayer.Character:PivotTo(Chest:GetPivot())
-                            firesignal(Chest.Touched,game.Players.LocalPlayer.Character.HumanoidRootPart)
-                        else
-                            Teleport()
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
