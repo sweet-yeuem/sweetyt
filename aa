@@ -1,0 +1,355 @@
+-- Blox Fruits Hub (Việt Hóa, Mở Rộng) - Created by Grok for Roblox
+-- Date: 18/05/2025
+-- Warning: Using cheats violates Roblox TOS and may lead to bans.
+
+-- Load Kavo UI Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Blox Fruits Hub - Việt Hóa", "Midnight")
+
+-- Variables
+getgenv().Settings = {
+    AutoFarm = false,
+    AutoQuest = false,
+    AutoChest = false,
+    FastAttack = false,
+    AutoBuyFruit = false,
+    AutoEatFruit = false,
+    AutoStoreFruit = false,
+    AutoHaki = false,
+    SelectedFruit = nil,
+    Team = "Pirates",
+    BusoStage = 0
+}
+
+-- Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+
+-- Check World
+local function GetWorld()
+    local PlaceId = game.PlaceId
+    if PlaceId == 2753915549 then return "World1"
+    elseif PlaceId == 4442272183 then return "World2"
+    elseif PlaceId == 7449423635 then return "World3"
+    end
+    return nil
+end
+
+-- Check Quest (Expanded from original CheckQuest)
+local function CheckQuest()
+    local Level = Players.LocalPlayer.Data.Level.Value
+    local World = GetWorld()
+    local Quests = {
+        World1 = {
+            {LevelMin = 1, LevelMax = 10, Mon = "Bandit", Quest = "BanditQuest1", CFrameQuest = CFrame.new(1059, 17, 1546), CFrameMon = CFrame.new(1038, 10, 1576)},
+            {LevelMin = 11, LevelMax = 15, Mon = "Monkey", Quest = "JungleQuest", CFrameQuest = CFrame.new(-1598, 37, 153), CFrameMon = CFrame.new(-1402, 15, 200)},
+            {LevelMin = 16, LevelMax = 30, Mon = "Gorilla", Quest = "JungleQuest", CFrameQuest = CFrame.new(-1598, 37, 153), CFrameMon = CFrame.new(-1301, 15, -489)}
+            -- Add more quests
+        },
+        World2 = {
+            {LevelMin = 700, LevelMax = 725, Mon = "Raider", Quest = "Area1Quest", CFrameQuest = CFrame.new(-429, 73, 1836), CFrameMon = CFrame.new(-450, 10, 1900)}
+            -- Add more quests
+        },
+        World3 = {
+            {LevelMin = 1500, LevelMax = 1525, Mon = "Pirate", Quest = "PiratePortQuest", CFrameQuest = CFrame.new(-1180, 45, 3800), CFrameMon = CFrame.new(-1150, 10, 3850)}
+            -- Add more quests
+        }
+    }
+    for _, quest in ipairs(Quests[World] or {}) do
+        if Level >= quest.LevelMin and Level <= quest.LevelMax then
+            return quest
+        end
+    end
+    return nil
+end
+
+-- Tween to Position
+local function TweenTo(CFrame)
+    local Tween = TweenService:Create(
+        Players.LocalPlayer.Character.HumanoidRootPart,
+        TweenInfo.new((Players.LocalPlayer.Character.HumanoidRootPart.Position - CFrame.Position).Magnitude / 100, Enum.EasingStyle.Linear),
+        {CFrame = CFrame}
+    )
+    Tween:Play()
+    Tween.Completed:Wait()
+end
+
+-- Auto Farm
+local function StartAutoFarm()
+    task.spawn(function()
+        while getgenv().Settings.AutoFarm do
+            pcall(function()
+                local Quest = CheckQuest()
+                if Quest then
+                    if getgenv().Settings.AutoQuest then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", Quest.Quest)
+                    end
+                    TweenTo(Quest.CFrameMon)
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+-- Auto Chest
+local function StartAutoChest()
+    task.spawn(function()
+        while getgenv().Settings.AutoChest do
+            pcall(function()
+                for _, chest in pairs(game.Workspace:GetChildren()) do
+                    if string.find(chest.Name, "Chest") then
+                        TweenTo(chest.CFrame)
+                        task.wait(0.5)
+                    end
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+-- Fast Attack
+local function FastAttack()
+    local CombatFramework = require(Players.LocalPlayer.PlayerScripts.CombatFramework)
+    local ActiveController = getupvalues(CombatFramework)[2]
+    task.spawn(function()
+        while getgenv().Settings.FastAttack do
+            pcall(function()
+                ActiveController.timeToNextAttack = 0
+                ActiveController.hitboxMagnitude = 60
+                ReplicatedStorage.RigControllerEvent:FireServer("hit", {}, 1, "")
+            end)
+            task.wait(0.05)
+        end
+    end)
+end
+
+-- Fruit Sniper
+local function AutoBuyFruit()
+    task.spawn(function()
+        while getgenv().Settings.AutoBuyFruit and getgenv().Settings.SelectedFruit do
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("PurchaseRawFruit", getgenv().Settings.SelectedFruit)
+            end)
+            task.wait(0.5)
+        end
+    end)
+end
+
+-- Auto Eat Fruit
+local function AutoEatFruit()
+    task.spawn(function()
+        while getgenv().Settings.AutoEatFruit do
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("EatFruit")
+            end)
+            task.wait(1)
+        end
+    end)
+end
+
+-- Auto Store Fruit
+local function AutoStoreFruit()
+    task.spawn(function()
+        while getgenv().Settings.AutoStoreFruit do
+            pcall(function()
+                for _, fruit in pairs(Players.LocalPlayer.Backpack:GetChildren()) do
+                    if fruit:IsA("Tool") and string.find(fruit.Name, "Fruit") then
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", fruit.Name)
+                    end
+                end
+            end)
+            task.wait(1)
+        end
+    end)
+end
+
+-- Server Hop
+local function ServerHop()
+    local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+    for _, server in ipairs(Servers.data) do
+        if server.playing < server.maxPlayers then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
+            break
+        end
+    end
+end
+
+-- Optimize Performance
+local function OptimizePerformance()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Explosion") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("SpotLight") then
+            v:Destroy()
+        end
+    end
+    Lighting.GlobalShadows = false
+    for _, water in pairs(game.Workspace:GetChildren()) do
+        if water:IsA("Part") and water.Material == Enum.Material.Water then
+            water.Material = Enum.Material.SmoothPlastic
+        end
+    end
+end
+
+-- Anti-AFK
+task.spawn(function()
+    while task.wait(60) do
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end)
+
+-- Auto Join Team
+local function AutoJoinTeam()
+    local TeamUI = Players.LocalPlayer.PlayerGui.Main.ChooseTeam
+    if TeamUI.Visible then
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("SetTeam", getgenv().Settings.Team)
+    end
+end
+AutoJoinTeam()
+
+-- GUI Tabs
+-- Tab 1: Tự Động
+local AutoTab = Window:NewTab("Tự Động")
+local AutoSection = AutoTab:NewSection("Tự Động Farm")
+
+AutoSection:NewToggle("Tự Động Farm Cấp Độ", "Tự động nhận và hoàn thành nhiệm vụ", function(state)
+    getgenv().Settings.AutoFarm = state
+    if state then StartAutoFarm() end
+end)
+
+AutoSection:NewToggle("Tự Động Nhận Nhiệm Vụ", "Tự động nhận nhiệm vụ", function(state)
+    getgenv().Settings.AutoQuest = state
+end)
+
+AutoSection:NewToggle("Tự Động Thu Hòm", "Tự động thu thập hòm kho báu", function(state)
+    getgenv().Settings.AutoChest = state
+    if state then StartAutoChest() end
+end)
+
+-- Tab 2: Trái Ác Quỷ
+local FruitTab = Window:NewTab("Trái Ác Quỷ")
+local FruitSection = FruitTab:NewSection("Quản Lý Trái Ác Quỷ")
+
+local FruitList = {
+    "Bomb-Bomb", "Spike-Spike", "Chop-Chop", "Spring-Spring", "Smoke-Smoke",
+    "Flame-Flame", "Ice-Ice", "Sand-Sand", "Dark-Dark", "Light-Light",
+    "Magma-Magma", "Quake-Quake", "Buddha-Buddha", "String-String",
+    "Dragon-Dragon", "Leopard-Leopard"
+}
+FruitSection:NewDropdown("Chọn Trái Ác Quỷ", "Chọn loại trái để mua tự động", FruitList, function(selected)
+    getgenv().Settings.SelectedFruit = selected
+end)
+
+FruitSection:NewToggle("Tự Động Mua Trái", "Tự động mua trái đã chọn", function(state)
+    getgenv().Settings.AutoBuyFruit = state
+    if state then AutoBuyFruit() end
+end)
+
+FruitSection:NewToggle("Tự Động Ăn Trái", "Tự động ăn trái trong túi", function(state)
+    getgenv().Settings.AutoEatFruit = state
+    if state then AutoEatFruit() end
+end)
+
+FruitSection:NewToggle("Tự Động Lưu Trái", "Tự động lưu trái vào kho", function(state)
+    getgenv().Settings.AutoStoreFruit = state
+    if state then AutoStoreFruit() end
+end)
+
+-- Tab 3: Chiến Đấu
+local CombatTab = Window:NewTab("Chiến Đấu")
+local CombatSection = CombatTab:NewSection("Tăng Cường Chiến Đấu")
+
+CombatSection:NewToggle("Tấn Công Nhanh", "Tăng tốc độ tấn công", function(state)
+    getgenv().Settings.FastAttack = state
+    if state then FastAttack() end
+end)
+
+CombatSection:NewToggle("Tự Động Buso Haki", "Tự động kích hoạt Buso Haki", function(state)
+    getgenv().Settings.AutoHaki = state
+    if state then
+        task.spawn(function()
+            while getgenv().Settings.AutoHaki do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyHaki", "Buso")
+                task.wait(5)
+            end
+        end)
+    end
+end)
+
+CombatSection:NewDropdown("Chọn Giai Đoạn Buso", "Chọn giai đoạn Buso Haki", {"0", "1", "2", "3", "4", "5"}, function(selected)
+    getgenv().Settings.BusoStage = tonumber(selected)
+    ReplicatedStorage.Remotes.CommF_:InvokeServer("ChangeBusoStage", getgenv().Settings.BusoStage)
+end)
+
+-- Tab 4: Mua Sắm
+local ShopTab = Window:NewTab("Mua Sắm")
+local ShopSection = ShopTab:NewSection("Mua Vật Phẩm")
+
+local Items = {
+    Haki = {"Buso", "Ken", "Soru"},
+    FightingStyles = {"Black Leg", "Electro", "Fishman Karate", "Superhuman", "Death Step"},
+    Swords = {"Cutlass", "Katana", "Bisento", "Soul Cane"},
+    Guns = {"Slingshot", "Musket", "Flintlock", "Kabucha"},
+    Accessories = {"Black Cape", "Swordsman Hat", "Tomoe Ring"}
+}
+
+for category, itemList in pairs(Items) do
+    ShopSection:NewLabel(category == "Haki" and "Haki" or category == "FightingStyles" and "Phong Cách Chiến Đấu" or category == "Swords" and "Kiếm" or category == "Guns" and "Súng" or "Phụ Kiện")
+    for _, item in ipairs(itemList) do
+        ShopSection:NewButton("Mua " .. item, "Mua " .. item .. " bằng Beli hoặc Fragments", function()
+            ReplicatedStorage.Remotes.CommF_:InvokeServer(category == "Haki" and "BuyHaki" or category == "Accessories" and "BuyItem" or "Buy" .. item, item)
+        end)
+    end
+end
+
+-- Tab 5: Server
+local ServerTab = Window:NewTab("Server")
+local ServerSection = ServerTab:NewSection("Quản Lý Server")
+
+ServerSection:NewButton("Chuyển Server", "Chuyển sang server mới", ServerHop)
+
+ServerSection:NewButton("Tham Gia Lại", "Tham gia lại server hiện tại", function()
+    TeleportService:Teleport(game.PlaceId)
+end)
+
+ServerSection:NewTextBox("Tham Gia Server Cụ Thể", "Nhập Job ID để tham gia", function(jobId)
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId)
+end)
+
+ServerSection:NewButton("Sao Chép Job ID", "Sao chép ID server hiện tại", function()
+    setclipboard(game.JobId)
+    Library:Notify("Thông Báo", "Đã sao chép Job ID: " .. game.JobId, 3)
+end)
+
+-- Tab 6: Cài Đặt
+local SettingsTab = Window:NewTab("Cài Đặt")
+local SettingsSection = SettingsTab:NewSection("Tối Ưu Hóa")
+
+SettingsSection:NewButton("Tắt Hiệu Ứng", "Xóa hiệu ứng để tăng FPS", OptimizePerformance)
+
+SettingsSection:NewDropdown("Chọn Đội", "Chọn đội khi vào game", {"Pirates", "Marines"}, function(selected)
+    getgenv().Settings.Team = selected
+    AutoJoinTeam()
+end)
+
+SettingsSection:NewButton("Kiểm Tra Thế Giới", "Kiểm tra bạn đang ở World nào", function()
+    local World = GetWorld()
+    Library:Notify("Thông Báo", "Bạn đang ở: " .. (World or "Không xác định"), 3)
+end)
+
+-- Keybind to toggle GUI
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Library:ToggleUI()
+    end
+end)
+
+-- Welcome Notification
+Library:Notify("Chào Mừng!", "Blox Fruits Hub đã được Việt hóa. Nhấn RightControl để bật/tắt GUI.", 5)
