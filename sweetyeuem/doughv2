@@ -3,10 +3,18 @@ local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local rep = game.ReplicatedStorage
 --//join team
+function Join(v2)
+    v2 = tostring(v2) or "Pirates"
+    v2 = string.find(v2, "Marine") and "Marines" or "Pirates"
+    for i, v in pairs(getconnections(plr.PlayerGui["Main (minimal)"].ChooseTeam.Container[v2].Frame.TextButton.Activated)) do
+        v.Function()
+    end
+end
+
 if not plr.Team then
     repeat task.wait()
         if plr.PlayerGui:WaitForChild("Main (minimal)"):FindFirstChild("ChooseTeam") then
-            rep.Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
+            Join(getgenv().Team or "Marines")
         end
     until plr.Team ~= nil
 end
@@ -125,36 +133,38 @@ buso = function ()
 end
 TS = game.TweenService
 function Tween(targetCFrame)
-    local char = plr.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then v.CanCollide = false end
+    if CheckPlayerAlive() then
+        local char = plr.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local hrp = char.HumanoidRootPart
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+        if not hrp:FindFirstChild("BodyClip") then
+            local att = Instance.new("Attachment", hrp)
+            local lv = Instance.new("LinearVelocity")
+            lv.Name = "BodyClip"
+            lv.Attachment0 = att
+            lv.MaxForce = math.huge
+            lv.VectorVelocity = Vector3.zero
+            lv.Parent = hrp
+
+            local av = Instance.new("AngularVelocity")
+            av.Name = "RotationClip"
+            av.Attachment0 = att
+            av.MaxTorque = math.huge
+            av.AngularVelocity = Vector3.zero
+            av.Parent = hrp
+        end
+
+        local distance = (hrp.Position - targetCFrame.Position).Magnitude
+        local info = TweenInfo.new(distance / 350, Enum.EasingStyle.Linear)
+
+        if _G.tween then _G.tween:Cancel() end
+        _G.tween = TS:Create(hrp, info, {CFrame = targetCFrame})
+        _G.tween:Play()
+        _G.tween.Completed:Wait()
     end
-    if not hrp:FindFirstChild("BodyClip") then
-        local att = Instance.new("Attachment", hrp)
-        local lv = Instance.new("LinearVelocity")
-        lv.Name = "BodyClip"
-        lv.Attachment0 = att
-        lv.MaxForce = math.huge
-        lv.VectorVelocity = Vector3.zero
-        lv.Parent = hrp
-
-        local av = Instance.new("AngularVelocity")
-        av.Name = "RotationClip"
-        av.Attachment0 = att
-        av.MaxTorque = math.huge
-        av.AngularVelocity = Vector3.zero
-        av.Parent = hrp
-    end
-
-    local distance = (hrp.Position - targetCFrame.Position).Magnitude
-    local info = TweenInfo.new(distance / 350, Enum.EasingStyle.Linear)
-
-    if _G.tween then _G.tween:Cancel() end
-    _G.tween = TS:Create(hrp, info, {CFrame = targetCFrame})
-    _G.tween:Play()
-    _G.tween.Completed:Wait()
 end
 function TweenObject(TweenCFrame, obj, ts)
     if not ts then ts = 350 end
@@ -232,6 +242,8 @@ FarmKata = function ()
             repeat task.wait()
                 KillMon(v.Name, true)
             until not v or not v:FindFirstChild("HumanoidRootPart") or not v:FindFirstChild("Humanoid") or v.Humanoid.Health <= 0
+        else
+            Tween(CFrame.new(-2091.911865234375, 70.00884246826172, -12142.8359375))
         end
     end
 end
