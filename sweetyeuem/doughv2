@@ -1,0 +1,375 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/SkibidiHub111/luau/refs/heads/main/abcyzojeb"))()
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local rep = game.ReplicatedStorage
+--//join team
+if not plr.Team then
+    repeat task.wait()
+        if plr.PlayerGui:WaitForChild("Main (minimal)"):FindFirstChild("ChooseTeam") then
+            rep.Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
+        end
+    until plr.Team ~= nil
+end
+--//Func
+ModuleLoop = function (f,d)
+    d = d or 0
+    task.spawn(function ()
+        while task.wait(d) do
+            f()
+        end
+    end)
+end
+
+--//Load Task
+function CheckPlayerAlive()
+    local a2, b2 = pcall(function() return plr.Character.Humanoid.Health > 0 end)
+    task.wait()
+    if a2 then return b2 end
+end
+
+function CheckItemBPCR(name)
+    chbp = {plr.Character,plr.Backpack}
+    for i, v in pairs(chbp) do
+        if v:FindFirstChild(name) then
+            return v:FindFirstChild(name)
+        end
+    end
+end
+function calcpos(p1,p2)
+    p2 = p2 or plr.Character.HumanoidRootPart.Position
+    return (p1 - p2).Magnitude
+end
+function CheckItemInv(m)
+    for _,v in next, rep.Remotes.CommF_:InvokeServer("getInventory") do
+        if v.Name == m then
+            return m
+        end
+    end
+end
+
+TaskCurrently = ""
+local RefreshTask = function ()
+    if CheckPlayerAlive() then
+        if plr.Data.Fragments.Value <= 20000 then
+            TaskCurrently = "Farm Kata"
+        elseif plr.Data.Fragments.Value >= 20000 then
+            if plr.Data.DevilFruit.Value ~= "Dough-Dough" and CheckItemInv("Dough-Dough") then
+                TaskCurrently = "Eat Dough Fruit"
+            elseif plr.Data.DevilFruit.Value == "Dough-Dough" then
+                TaskCurrently = "Auto Raid"
+            end
+        end
+    end
+end
+
+function equip(tooltip)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+
+    for _, v in ipairs(plr.Backpack:GetChildren()) do
+        if v:IsA("Tool") and v.ToolTip == tooltip or v.Name == tooltip then
+            hum:UnequipTools()
+            hum:EquipTool(v)
+            return true
+        end
+    end
+end
+
+function EatDough()
+    if CheckItemInv("Dough-Dough") then
+        rep.Remotes.CommF_:InvokeServer("LoadFruit", "Dough-Dough")
+        task.wait(1)
+        repeat task.wait() 
+            equip("Dough Fruit")
+        until plr.Character["Dough Fruit"]:FindFirstChild("EatRemote")
+        plr.Character["Dough Fruit"]:FindFirstChild("EatRemote"):InvokeServer()
+    end
+end
+function DetectingPart(v1)
+    return v1 and v1:FindFirstChild("HumanoidRootPart") and v1:FindFirstChild("Humanoid")
+end
+
+function CheckMon(k, replicated)
+    replicated = replicated or false
+
+    for i, v in pairs(workspace.Enemies:GetChildren()) do
+        if type(k) == "table" then
+            if table.find(k, v.Name) and DetectingPart(v) and v.Humanoid.Health > 0 then
+                return v
+            end
+        else
+            if v.Name == k and DetectingPart(v) and v.Humanoid.Health > 0 then
+                return v
+            end
+        end
+    end
+    if replicated then
+        for i, v in pairs(rep:GetChildren()) do
+            if type(k) == "table" then
+                if table.find(k, v.Name) then
+                    return v
+                end
+            else
+                if v.Name == k then
+                    return v
+                end
+            end
+        end
+    end
+end
+
+buso = function ()
+    if (not (plr.Character:FindFirstChild("HasBuso"))) then
+        rep.Remotes.CommF_:InvokeServer("Buso")
+    end    
+end
+TS = game.TweenService
+function Tween(targetCFrame)
+    local char = plr.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then v.CanCollide = false end
+    end
+    if not hrp:FindFirstChild("BodyClip") then
+        local att = Instance.new("Attachment", hrp)
+        local lv = Instance.new("LinearVelocity")
+        lv.Name = "BodyClip"
+        lv.Attachment0 = att
+        lv.MaxForce = math.huge
+        lv.VectorVelocity = Vector3.zero
+        lv.Parent = hrp
+
+        local av = Instance.new("AngularVelocity")
+        av.Name = "RotationClip"
+        av.Attachment0 = att
+        av.MaxTorque = math.huge
+        av.AngularVelocity = Vector3.zero
+        av.Parent = hrp
+    end
+
+    local distance = (hrp.Position - targetCFrame.Position).Magnitude
+    local info = TweenInfo.new(distance / 350, Enum.EasingStyle.Linear)
+
+    if _G.tween then _G.tween:Cancel() end
+    _G.tween = TS:Create(hrp, info, {CFrame = targetCFrame})
+    _G.tween:Play()
+    _G.tween.Completed:Wait()
+end
+function TweenObject(TweenCFrame, obj, ts)
+    if not ts then ts = 350 end
+    local tween_s = game:service "TweenService"
+    local info = TweenInfo.new((TweenCFrame.Position - obj.Position).Magnitude / ts, Enum.EasingStyle.Linear)
+    tween = tween_s:Create(obj, info, { CFrame = TweenCFrame })
+    tween:Play()
+end
+function VelocityEnemys(enemy)
+    local humanoid = enemy.HumanoidRootPart or enemy:WaitForChild('HumanoidRootPart')
+    if not humanoid then return end
+    humanoid.ChildAdded:Connect(function(child)
+        if child:IsA("BodyVelocity") or child:IsA("BodyPosition") then
+            child.MaxForce = Vector3.new(0, 0, 0)
+            child.P = 0
+        elseif child:IsA("BodyGyro") then
+            child.P = 0
+            child.MaxTorque = Vector3.new(0, 0, 0)
+        end
+    end)
+end
+
+function Bring(nameMob, BringC, DistanceF, radius)
+    inputed = nameMob
+    inputed2 = DistanceF
+    inputed3 = radius
+    inputed4 = BringC
+    for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
+        if v.Name == inputed and v:FindFirstChild("Head") and DetectingPart(v) and v.Humanoid.Health > 0 and inputed2.Magnitude <= inputed3 then
+            VelocityEnemys(v)
+            TweenObject(inputed4, v.HumanoidRootPart, 1000)
+            v.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+            v.Humanoid.JumpPower = 0
+            v.Humanoid.WalkSpeed = 0
+            v.Humanoid:ChangeState(14)
+            v.HumanoidRootPart.CanCollide = false
+            v.Head.CanCollide = false
+            if v.Humanoid:FindFirstChild("Animator") then
+                v.Humanoid.Animator:Destroy()
+            end
+            sethiddenproperty(plr, "SimulationRadius", 3300)
+        end
+    end
+end
+
+function KillMon(mob, bringmobvalue)
+    if CheckMon(mob, true) then
+        v = CheckMon(mob, true)
+        task.spawn(function ()
+            if bringmobvalue then
+                Bring(v.Name, v.HumanoidRootPart.CFrame, (v.HumanoidRootPart.Position - v.HumanoidRootPart.Position), 250)
+            end
+        end)
+        if DetectingPart(v) and v.Humanoid.Health > 0 then
+            buso()
+            equip("Melee")
+            Tween(v.HumanoidRootPart.CFrame * CFrame.new(2, 25, 2))
+        end
+    end
+end
+
+FarmKata = function ()
+    if CheckMon({"Cake Prince", "Dough King"}, true) then
+        v = CheckMon({"Cake Prince", "Dough King"}, true)
+        repeat task.wait(.1)
+            KillMon(v.Name, false)
+        until not v or v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Humanoid") or v.Humanoid.Health <= 0
+    else
+        if rep.Remotes.CommF_:InvokeServer("CakePrinceSpawner", true):find("open the portal now") then
+            rep.Remotes.CommF_:InvokeServer("CakePrinceSpawner")
+        end
+
+        if CheckMon({"Cookie Crafter","Cake Guard","Baking Staff","Head Baker"}) then
+            v = CheckMon({"Cookie Crafter","Cake Guard","Baking Staff","Head Baker"})
+            repeat task.wait()
+                KillMon(v.Name, true)
+            until not v or not v:FindFirstChild("HumanoidRootPart") or not v:FindFirstChild("Humanoid") or v.Humanoid.Health <= 0
+        end
+    end
+end
+function CheckIslandRaid(v6)
+    if workspace["_WorldOrigin"].Locations:FindFirstChild("Island " .. v6) then
+        Min = 4500
+        for r,v in pairs(workspace["_WorldOrigin"].Locations:GetChildren()) do
+            if v.Name == "Island " .. v6 and calcpos(v.Position) < Min then
+                Min = calcpos(v.Position)
+            end
+        end
+        for r,v in pairs(workspace["_WorldOrigin"].Locations:GetChildren()) do
+            if v.Name == "Island " .. v6 and calcpos(v.Position) <= Min then
+                return v
+            end
+        end
+    end
+end
+
+function NextIsland()
+    TableIslandsRaid = {5, 4, 3, 2, 1}
+    for r,v in pairs(TableIslandsRaid) do
+        if CheckIslandRaid(v) and calcpos(CheckIslandRaid(v).Position) <= 4500 then
+            return CheckIslandRaid(v)
+        end
+    end
+end
+
+function CheckIsRaiding()
+    Timer = plr.PlayerGui.Main.Timer.Visible == true
+    Island = NextIsland()
+    if Timer then
+        return Timer
+    end
+    return Island
+end
+function Kill_Aura()
+    for i,v in pairs(workspace.Enemies:GetDescendants()) do
+        if DetectingPart(v) and v.Humanoid.Health > 0 then
+            repeat wait()
+                KillMon(v.Name, false)
+            until NotAlive(v) or not TaskCurrently ~= "Auto Raid"
+        end
+    end
+end
+
+function AutoRaid()
+    if CheckIsRaiding() then
+        pcall(function ()
+            if NextIsland() then
+                Tween(NextIsland().CFrame * CFrame.new(0, 65, 0))
+            end
+            Kill_Aura()
+        end)
+    else
+        if not CheckItemBPCR("Special Microchip") then rep.Remotes.CommF_:InvokeServer("RaidsNpc", "Select", "Dough") return end
+        if Second_Sea then
+            if calcpos(Vector3.new(-6459.41748046875, 306.11492919921875, -4742.63671875)) >= 500 then
+                Tween(CFrame.new(-6459.41748046875, 306.11492919921875, -4742.63671875))
+            else
+                fireclickdetector(workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
+                return
+            end
+        elseif Third_Sea then
+            if calcpos(Vector3.new(-5095.30029296875, 314.7398986816406, -2967.9951171875)) > 500 then
+                Tween(CFrame.new(-5095.30029296875, 314.7398986816406, -2967.9951171875))
+            else
+                fireclickdetector(workspace.Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+                return
+            end
+        end
+    end
+end
+
+ModuleLoop(function ()
+    RefreshTask()
+    if TaskCurrently == "Eat Dough Fruit" then
+        EatDough()
+    elseif TaskCurrently == "Auto Raid" then
+        AutoRaid()
+    elseif TaskCurrently == "Farm Kata" then
+        FarmKata()
+    end
+end, .3)
+
+--//Fast Attack
+local Modules = rep.Modules
+local Net = Modules.Net
+local Register_Hit, Register_Attack = Net:WaitForChild("RE/RegisterHit"), Net:WaitForChild("RE/RegisterAttack")
+local Funcs = {}
+function GetAllBladeHits()
+    bladehits = {}
+    for _, v in pairs(workspace.Enemies:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 
+        and calcpos(v.HumanoidRootPart.Position) <= 65 then
+            table.insert(bladehits, v)
+        end
+    end
+    return bladehits
+end
+function Getplayerhit()
+    bladehits = {}
+    for _, v in pairs(workspace.Characters:GetChildren()) do
+        if v.Name ~= plr.Name and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 
+        and calcpos(v.HumanoidRootPart.Position) <= 65 then
+            table.insert(bladehits, v)
+        end
+    end
+    return bladehits
+end
+
+function Funcs:Attack()
+    local bladehits = {}
+    for r,v in pairs(GetAllBladeHits()) do
+        table.insert(bladehits, v)
+    end
+    for r,v in pairs(Getplayerhit()) do
+        table.insert(bladehits, v)
+    end
+    if #bladehits == 0 then return end
+    local args = {
+        [1] = nil;
+        [2] = {},
+        [4] = "078da341"
+    }
+    for r, v in pairs(bladehits) do
+        Register_Attack:FireServer(0)
+        if not args[1] then
+            args[1] = v:FindFirstChild("Head")
+        end
+        args[2][r] = {
+            [1] = v,
+            [2] = v:FindFirstChild("HumanoidRootPart")
+        }
+    end
+    Register_Hit:FireServer(unpack(args))
+end
+
+while task.wait(.001) do
+    Funcs:Attack()
+end
