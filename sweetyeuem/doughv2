@@ -1,19 +1,11 @@
 local plr = game.Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
+local char = plr.Character
 local rep = game.ReplicatedStorage
 --//join team
-function Join(v2)
-    v2 = tostring(v2) or "Pirates"
-    v2 = string.find(v2, "Marine") and "Marines" or "Pirates"
-    for i, v in pairs(getconnections(plr.PlayerGui["Main (minimal)"].ChooseTeam.Container[v2].Frame.TextButton.Activated)) do
-        v.Function()
-    end
-end
-
 if not plr.Team then
     repeat task.wait()
         if plr.PlayerGui:WaitForChild("Main (minimal)"):FindFirstChild("ChooseTeam") then
-            Join(getgenv().Team or "Marines")
+            rep.Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team or "Marines")
         end
     until plr.Team ~= nil
 end
@@ -82,13 +74,25 @@ local RefreshTask = function ()
         end
     end
 end
-
 function equip(tooltip)
+    local hum = (plr.Character or plr.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+
+    for _, v in ipairs(plr.Backpack:GetChildren()) do
+        if v:IsA("Tool") and v.ToolTip == tooltip then
+            hum:UnequipTools()
+            hum:EquipTool(v)
+            return true
+        end
+    end
+end
+
+function equipfruit(name)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
 
     for _, v in ipairs(plr.Backpack:GetChildren()) do
-        if v:IsA("Tool") and v.ToolTip == tooltip or v.Name == tooltip then
+        if v.Name == name then
             hum:UnequipTools()
             hum:EquipTool(v)
             return true
@@ -101,7 +105,7 @@ function EatDough()
         rep.Remotes.CommF_:InvokeServer("LoadFruit", "Dough-Dough")
         task.wait(1)
         repeat task.wait() 
-            equip("Dough Fruit")
+            equipfruit("Dough Fruit")
         until plr.Character["Dough Fruit"]:FindFirstChild("EatRemote")
         plr.Character["Dough Fruit"]:FindFirstChild("EatRemote"):InvokeServer()
     end
@@ -371,4 +375,6 @@ ModuleLoop(function ()
 end, .3)
 
 --//Fast Attack
-loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
+ModuleLoop(function ()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
+end, 10)
