@@ -376,5 +376,5 @@ end, .3)
 
 --//Fast Attack
 ModuleLoop(function ()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/SkibidiHub111/luau/refs/heads/main/abcyzojeb"))()
 end, 10)
