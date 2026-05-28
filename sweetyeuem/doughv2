@@ -42,7 +42,9 @@ function calcpos(p1,p2)
     return (p1 - p2).Magnitude
 end
 function CheckItemInv(m)
-    for _,v in next, rep.Remotes.CommF_:InvokeServer("getInventory") do
+    local inv = rep.Remotes.CommF_:InvokeServer("getInventory")
+    if not inv then return end
+    for _,v in next, inv do
         if v.Name == m then
             return m
         end
@@ -61,14 +63,22 @@ end
 TaskCurrently = ""
 local RefreshTask = function ()
     if CheckPlayerAlive() then
-        if plr.Data.Fragments.Value <= 20000 then
-            TaskCurrently = "Farm Kata"
-        elseif not CheckItemInv("Mirror Fractal") then
-            TaskCurrently = "Get Mirror Fractal"
-        elseif plr.Data.Fragments.Value >= 20000 then
-            if plr.Data.DevilFruit.Value ~= "Dough-Dough" and CheckItemInv("Dough-Dough") then
-                TaskCurrently = "Eat Dough Fruit"
-            elseif plr.Data.DevilFruit.Value == "Dough-Dough" then
+        if plr.Data.DevilFruit.Value ~= "Dough-Dough" and CheckItemInv("Dough-Dough") then
+            TaskCurrently = "Eat Dough Fruit"
+        elseif plr.Data.DevilFruit.Value == "Dough-Dough" then
+            if plr.Data.Fragments.Value <= 20000 then
+                TaskCurrently = "Farm Kata"
+            elseif not CheckItemInv("Mirror Fractal") then
+                TaskCurrently = "Get Mirror Fractal"
+            else
+                TaskCurrently = "Auto Raid"
+            end
+        else
+            if plr.Data.Fragments.Value <= 20000 then
+                TaskCurrently = "Farm Kata"
+            elseif not CheckItemInv("Mirror Fractal") then
+                TaskCurrently = "Get Mirror Fractal"
+            else
                 TaskCurrently = "Auto Raid"
             end
         end
@@ -101,13 +111,32 @@ function equipfruit(name)
 end
 
 function EatDough()
-    if CheckItemInv("Dough-Dough") then
-        rep.Remotes.CommF_:InvokeServer("LoadFruit", "Dough-Dough")
-        task.wait(1)
-        repeat task.wait() 
-            equipfruit("Dough Fruit")
-        until plr.Character["Dough Fruit"]:FindFirstChild("EatRemote")
-        plr.Character["Dough Fruit"]:FindFirstChild("EatRemote"):InvokeServer()
+    local function findTool()
+        for _, obj in {plr.Backpack, plr.Character} do
+            if obj then
+                for _, v in obj:GetChildren() do
+                    if v:IsA("Tool") and v.Name:find("Dough") then
+                        return v
+                    end
+                end
+            end
+        end
+    end
+    local fruitName = CheckItemInv("Dough-Dough")
+    local tool = findTool()
+    if not tool and fruitName then
+        pcall(rep.Remotes.CommF_.InvokeServer, rep.Remotes.CommF_, "StoreFruit", fruitName)
+        pcall(rep.Remotes.CommF_.InvokeServer, rep.Remotes.CommF_, "LoadFruit", fruitName)
+        local timeout = os.time() + 5
+        repeat task.wait()
+            tool = findTool()
+        until tool or os.time() > timeout
+    end
+    if tool then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:EquipTool(tool); task.wait(0.5) end
+        local eatRemote = tool:FindFirstChild("EatRemote")
+        if eatRemote then eatRemote:InvokeServer() end
     end
 end
 function DetectingPart(v1)
